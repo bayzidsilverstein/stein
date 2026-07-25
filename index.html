@@ -2,21 +2,251 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Space Dodger</title>
-<link rel="stylesheet" href="style.css">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Square Jump</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    touch-action:manipulation;
+}
+
+body{
+    background:#111827;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+}
+
+#game{
+    position:relative;
+    width:100%;
+    max-width:420px;
+    height:700px;
+    background:linear-gradient(#6ec6ff,#bde9ff);
+    overflow:hidden;
+    border-radius:15px;
+    box-shadow:0 0 25px rgba(0,0,0,.4);
+}
+
+#ground{
+    position:absolute;
+    bottom:0;
+    width:100%;
+    height:90px;
+    background:#3d7a2b;
+}
+
+#player{
+    position:absolute;
+    width:45px;
+    height:45px;
+    background:#2563eb;
+    left:70px;
+    bottom:90px;
+    border-radius:8px;
+}
+
+.obstacle{
+    position:absolute;
+    width:35px;
+    height:60px;
+    background:#dc2626;
+    bottom:90px;
+    border-radius:5px;
+}
+
+#score{
+    position:absolute;
+    top:15px;
+    left:15px;
+    font-size:28px;
+    font-weight:bold;
+    color:#111;
+}
+
+#message{
+    position:absolute;
+    width:100%;
+    top:45%;
+    text-align:center;
+    font-size:28px;
+    font-weight:bold;
+    color:#111;
+}
+
+#hint{
+    position:absolute;
+    bottom:20px;
+    width:100%;
+    text-align:center;
+    color:#fff;
+    font-size:18px;
+}
+</style>
 </head>
+
 <body>
 
-<h1>🚀 Space Dodger</h1>
+<div id="game">
 
-<div id="score">Score: 0</div>
+<div id="score">0</div>
 
-<canvas id="game" width="400" height="600"></canvas>
+<div id="message">
+Tap to Start
+</div>
 
-<p>Move with ← → or A D</p>
+<div id="player"></div>
 
-<script src="game.js"></script>
+<div id="ground"></div>
+
+<div id="hint">
+Tap anywhere or press Space
+</div>
+
+</div>
+
+<script>
+const game=document.getElementById("game");
+const player=document.getElementById("player");
+const scoreText=document.getElementById("score");
+const message=document.getElementById("message");
+
+let playerY=0;
+let velocity=0;
+let jumping=false;
+
+let score=0;
+let speed=6;
+let playing=false;
+
+const gravity=0.8;
+const jumpPower=15;
+
+let obstacles=[];
+
+function jump(){
+
+    if(!playing){
+        startGame();
+        return;
+    }
+
+    if(!jumping){
+        velocity=jumpPower;
+        jumping=true;
+    }
+
+}
+
+document.addEventListener("keydown",e=>{
+    if(e.code==="Space"||e.code==="ArrowUp"){
+        e.preventDefault();
+        jump();
+    }
+});
+
+game.addEventListener("touchstart",jump);
+game.addEventListener("mousedown",jump);
+
+function startGame(){
+
+    playing=true;
+    score=0;
+    speed=6;
+
+    message.style.display="none";
+
+    obstacles.forEach(o=>o.remove());
+    obstacles=[];
+
+}
+
+function spawnObstacle(){
+
+    if(!playing)return;
+
+    const o=document.createElement("div");
+    o.className="obstacle";
+    o.style.left="420px";
+
+    game.appendChild(o);
+
+    obstacles.push(o);
+
+}
+
+setInterval(spawnObstacle,1400);
+
+function gameOver(){
+
+    playing=false;
+
+    message.innerHTML=
+    "Game Over<br><br>Score: "+score+
+    "<br><br>Tap to Restart";
+
+    message.style.display="block";
+
+}
+
+function update(){
+
+    requestAnimationFrame(update);
+
+    if(!playing)return;
+
+    velocity-=gravity;
+    playerY+=velocity;
+
+    if(playerY<0){
+        playerY=0;
+        velocity=0;
+        jumping=false;
+    }
+
+    player.style.bottom=(90+playerY)+"px";
+
+    obstacles.forEach((o,index)=>{
+
+        let x=parseFloat(o.style.left);
+
+        x-=speed;
+
+        o.style.left=x+"px";
+
+        if(x<-40){
+            o.remove();
+            obstacles.splice(index,1);
+            score++;
+            speed+=0.05;
+        }
+
+        const px=70;
+        const py=90+playerY;
+
+        if(
+            x<px+45 &&
+            x+35>px &&
+            py<150 &&
+            py+45>90
+        ){
+            gameOver();
+        }
+
+    });
+
+    scoreText.textContent=score;
+
+}
+
+update();
+</script>
 
 </body>
 </html>
